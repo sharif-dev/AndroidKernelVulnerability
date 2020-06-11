@@ -1,0 +1,107 @@
+==================================================================
+BUG: KASAN: use-after-free in atomic_cmpxchg include/asm-generic/atomic-instrumented.h:57
+BUG: KASAN: use-after-free in queued_spin_lock include/asm-generic/qspinlock.h:87
+BUG: KASAN: use-after-free in do_raw_spin_lock_flags include/linux/spinlock.h:173
+BUG: KASAN: use-after-free in __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:119
+BUG: KASAN: use-after-free in _raw_spin_lock_irqsave+0x3a/0x5d kernel/locking/spinlock.c:160
+Write of size 4 at addr ffff888050298e28 by task cve-2019-2215-t/6963
+
+CPU: 1 PID: 6963 Comm: cve-2019-2215-t Tainted: G        W       4.14.150+ #1
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.11.1-0-g0551a4be2c-prebuilt.qemu-project.org 04/01/2014
+Call Trace:
+ __dump_stack lib/dump_stack.c:17
+ dump_stack+0x78/0xbe lib/dump_stack.c:53
+ print_address_description+0x81/0x25d mm/kasan/report.c:187
+ __kasan_report+0x14f/0x180 mm/kasan/report.c:316
+ kasan_report+0x26/0x49 mm/kasan/common.c:626
+ check_memory_region_inline mm/kasan/generic.c:182
+ check_memory_region+0x171/0x17e mm/kasan/generic.c:191
+ kasan_check_write+0x14/0x16 mm/kasan/common.c:106
+ atomic_cmpxchg include/asm-generic/atomic-instrumented.h:57
+ queued_spin_lock include/asm-generic/qspinlock.h:87
+ do_raw_spin_lock_flags include/linux/spinlock.h:173
+ __raw_spin_lock_irqsave include/linux/spinlock_api_smp.h:119
+ _raw_spin_lock_irqsave+0x3a/0x5d kernel/locking/spinlock.c:160
+ remove_wait_queue+0x27/0x122 kernel/sched/wait.c:50
+ ep_remove_wait_queue fs/eventpoll.c:612
+ ep_unregister_pollwait+0x160/0x1bd fs/eventpoll.c:630
+ ep_free+0x8b/0x181 fs/eventpoll.c:847
+ ep_eventpoll_release+0x48/0x54 fs/eventpoll.c:879
+ __fput+0x1f2/0x51d fs/file_table.c:210
+ ____fput+0x15/0x18 fs/file_table.c:244
+ task_work_run+0x127/0x154 kernel/task_work.c:113
+ exit_task_work include/linux/task_work.h:22
+ do_exit+0x818/0x2384 kernel/exit.c:875
+ do_group_exit+0x12c/0x24b kernel/exit.c:978
+ SYSC_exit_group+0x17/0x17 kernel/exit.c:989
+ SyS_exit_group+0x14/0x14 kernel/exit.c:987
+ do_syscall_64+0x19e/0x225 arch/x86/entry/common.c:292
+ entry_SYSCALL_64_after_hwframe+0x3d/0xa2 arch/x86/entry/entry_64.S:233
+RIP: 0033:0x4047d7
+RSP: 002b:00007ffc7f770b58 EFLAGS: 00000246 ORIG_RAX: 00000000000000e7
+RAX: ffffffffffffffda RBX: 0000000000000000 RCX: 00000000004047d7
+RDX: 0000000000000002 RSI: 0000000000001000 RDI: 0000000000000000
+RBP: 0000000000000000 R08: 0000000000482335 R09: 0000000000000000
+R10: 00007ffc7f770b50 R11: 0000000000000246 R12: 0000000000400190
+R13: 00000000004a4618 R14: 00000000004002e0 R15: 00007ffc7f770c20
+
+Allocated by task 6963:
+ save_stack_trace+0x16/0x18 arch/x86/kernel/stacktrace.c:59
+ save_stack mm/kasan/common.c:76
+ set_track mm/kasan/common.c:85
+ __kasan_kmalloc+0x133/0x1cc mm/kasan/common.c:501
+ kasan_kmalloc+0x9/0xb mm/kasan/common.c:515
+ kmem_cache_alloc_trace+0x1bd/0x26f mm/slub.c:2819
+ kmalloc include/linux/slab.h:488
+ kzalloc include/linux/slab.h:661
+ binder_get_thread+0x166/0x6db drivers/android/binder.c:4677
+ binder_poll+0x4c/0x1c2 drivers/android/binder.c:4805
+ ep_item_poll fs/eventpoll.c:888
+ ep_insert fs/eventpoll.c:1476
+ SYSC_epoll_ctl fs/eventpoll.c:2128
+ SyS_epoll_ctl+0x1558/0x24f0 fs/eventpoll.c:2014
+ do_syscall_64+0x19e/0x225 arch/x86/entry/common.c:292
+ entry_SYSCALL_64_after_hwframe+0x3d/0xa2 arch/x86/entry/entry_64.S:233
+ 0xffffffffffffffff
+
+Freed by task 6963:
+ save_stack_trace+0x16/0x18 arch/x86/kernel/stacktrace.c:59
+ save_stack mm/kasan/common.c:76
+ set_track mm/kasan/common.c:85
+ __kasan_slab_free+0x18f/0x23f mm/kasan/common.c:463
+ kasan_slab_free+0xe/0x10 mm/kasan/common.c:471
+ slab_free_hook mm/slub.c:1407
+ slab_free_freelist_hook mm/slub.c:1458
+ slab_free mm/slub.c:3039
+ kfree+0x193/0x5b3 mm/slub.c:3976
+ binder_free_thread drivers/android/binder.c:4705
+ binder_thread_dec_tmpref+0x192/0x1d9 drivers/android/binder.c:2053
+ binder_thread_release+0x464/0x4bd drivers/android/binder.c:4794
+ binder_ioctl+0x48a/0x101c drivers/android/binder.c:5062
+ do_vfs_ioctl+0x608/0x106a fs/ioctl.c:46
+ SYSC_ioctl fs/ioctl.c:701
+ SyS_ioctl+0x75/0xa4 fs/ioctl.c:692
+ do_syscall_64+0x19e/0x225 arch/x86/entry/common.c:292
+ entry_SYSCALL_64_after_hwframe+0x3d/0xa2 arch/x86/entry/entry_64.S:233
+ 0xffffffffffffffff
+
+The buggy address belongs to the object at ffff888050298d88
+ which belongs to the cache kmalloc-512 of size 512
+The buggy address is located 160 bytes inside of
+ 512-byte region [ffff888050298d88, ffff888050298f88)
+The buggy address belongs to the page:
+page:ffffea000140a600 count:1 mapcount:0 mapping:          (null) index:0xffff88805029abe8 compound_mapcount: 0
+flags: 0x4000000000010200(slab|head)
+raw: 4000000000010200 0000000000000000 ffff88805029abe8 0000000100120009
+raw: ffffea0000dfe820 ffff88805ac01650 ffff88805ac0cf40 0000000000000000
+page dumped because: kasan: bad access detected
+
+Memory state around the buggy address:
+ ffff888050298d00: fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc fc
+ ffff888050298d80: fc fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+>ffff888050298e00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+                                  ^
+ ffff888050298e80: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+ ffff888050298f00: fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb fb
+==================================================================
+
